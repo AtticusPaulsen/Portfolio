@@ -60,7 +60,7 @@ WHERE HP.Total_Count >5
 ORDER BY HP.Total_count DESC
 
 --                                                                                    TEMP TABLES
----- Shows Total View Count aggregated from Player Hero Combos inner joined with total game count from hero performances in Descending order on hero performances
+---- Here we are creating the finalists for Fys new teammates, this could be used in a visualisation in Tableau or PowerBI
 DROP Table if exists #TempTable1#
 Create Table #TempTable1#
 (
