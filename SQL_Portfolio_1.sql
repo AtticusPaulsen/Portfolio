@@ -74,3 +74,22 @@ FROM dbo.player_Hero_Performance
 WHERE Hero IN (SELECT Hero FROM dbo.player_Hero_Performance WHERE Hero='Queen of Pain' OR Hero='Axe') AND Player<>'Fy' AND Winrate>'60.00' OR Player='Kuroky'
 
 Select * From #TempTable1#
+
+--                                                                                    OBSCURE FUNCTIONS
+-- Creating an index on Hero Performance
+CREATE INDEX Hero_Player_Key
+ON DotaHeroPlayer.dbo.Hero_Performance (Hero)
+
+-- Dropping that index because it's titled incorrectly
+DROP INDEX Hero_Player_Key
+
+-- Backing up the Database
+BACKUP DATABASE DotaHeroPlayer
+TO DISK = 'C:/Users/Attic/Documents/DotaHeroPlayer.bak'
+
+-- Random Value/Variable Declaration
+Declare @A NUMERIC
+Declare @B NUMERIC
+
+SET @A = Cast(DotaHeroPlayer.dbo.Hero_Performance.Wins as Decimal(10,2))
+SET @B = Cast(DotaHeroPlayer.dbo.Hero_Performance.Losses as Decimal(10,2))
