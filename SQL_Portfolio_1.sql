@@ -14,7 +14,11 @@ ORDER BY Kills DESC
 -- Help FY pick the best players for his team, he wants an Axe and Queen of Pain on his team or KuroKy
 SELECT Player, Winrate, Hero
 FROM dbo.player_Hero_Performance
-WHERE Hero IN (SELECT Hero FROM dbo.player_Hero_Performance WHERE Hero='Queen of Pain' OR Hero='Axe') AND Player<>'Fy' AND Winrate>'60.00' OR Player='Kuroky'
+WHERE Hero IN (
+    SELECT Hero 
+    FROM dbo.player_Hero_Performance 
+    WHERE Hero='Queen of Pain' OR Hero='Axe') 
+AND Player<>'Fy' AND Winrate>'60.00' OR Player='Kuroky'
 ORDER BY Winrate DESC
 
 -- Biggest hero earners in game with a confidence requirement of above 30 games recorded
@@ -27,6 +31,17 @@ ORDER BY GPM DESC
 SELECT * 
 FROM dbo.player_Hero_Performance 
 WHERE Player='Fy' AND Winrate >'55.00'
+
+-- Show top 5 heros of this seasons play that were both good as a player hero combo and hero generally. This should produce a cross sectional slice of good heroes in professional matches
+SELECT TOP 5 Hero 
+FROM dbo.Player_Hero_Performance 
+WHERE Hero IN (
+    SELECT TOP 10 Hero 
+    FROM dbo.Player_Hero_Performance 
+    WHERE total_count > 60 
+    ORDER BY Winrate DESC) 
+AND Total_Count > 100
+GROUP BY Hero
 
 
 --                                                                                     VIEWS
@@ -93,3 +108,7 @@ Declare @B NUMERIC
 
 SET @A = Cast(DotaHeroPlayer.dbo.Hero_Performance.Wins as Decimal(10,2))
 SET @B = Cast(DotaHeroPlayer.dbo.Hero_Performance.Losses as Decimal(10,2))
+
+-- Composite Key Creation
+ALTER TABLE dbo.player_Hero_Performance DROP COLUMN PlayerHeroKey
+ALTER TABLE dbo.Player_Hero_Performance ADD PlayerHeroKey AS (Player + Hero)
