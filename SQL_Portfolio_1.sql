@@ -4,6 +4,10 @@
 -- This SQL Portfolio is located at https://github.com/AtticusPaulsen/SQL_Portfolio/blob/main/SQL_Portfolio_1.sql
 
 
+--                                                                             VARIABLE DECLARATION
+DECLARE @Player AS VARCHAR(12)
+SET @Player = 'Fy'
+
 --                                                                                  QUERIES
 --Show total game count for all instances of heros in player hero combos in descending order
 SELECT PHP.Hero, SUM(PHP.total_count) AS Total_game_Count, CONVERT(Decimal (10,2), AVG(PHP.Kills)) AS Kills
@@ -18,7 +22,7 @@ WHERE Hero IN (
     SELECT Hero 
     FROM dbo.player_Hero_Performance 
     WHERE Hero='Queen of Pain' OR Hero='Axe') 
-AND Player<>'Fy' AND Winrate>'60.00' OR Player='Kuroky'
+AND Player<>'@Player' AND Winrate>'60.00' OR Player='Kuroky'
 ORDER BY Winrate DESC
 
 -- Biggest hero earners in game with a confidence requirement of above 30 games recorded
