@@ -1,3 +1,40 @@
+-- Demonstration productivity metrics
+SELECT 
+  CASE WHEN c.LASTNAME LIKE '%admin%' THEN 'Admin' WHEN c.LASTNAME = '**Scheduling Capacity**' THEN 'Scheduling Capacity' WHEN c.LASTNAME = '**Admission Capacity**' 
+  OR c.LASTNAME = 'Admission Capacity' THEN 'Admission Capacity' WHEN c.LASTNAME LIKE '%shift%' THEN 'Shift Transport' WHEN c.LASTNAME LIKE '%meeting%' THEN 'Meeting' WHEN c.LASTNAME LIKE '%training%' THEN 'Training' WHEN c.LASTNAME = 'Paid Coffee Break' THEN 'Paid Coffee Break' WHEN c.LASTNAME = 'Unpaid Break' THEN 'Unpaid Break' --N/A could still include non-productive hours, they just haven't been called out in request
+  ELSE 'N/A' END as 'Non-Productive Activities', 
+  SUM(v.DURATION) as Total_Hours, 
+  -- Subquery to get total amount of hours in visits during time frame
+  (
+    (
+      SUM(v.DURATION)/(
+        SELECT 
+          SUM(DURATION) 
+        FROM 
+          SRCI_PROCURA_BC.VISITS 
+        WHERE 
+          DL_END_TS = '9999-12-31 23:59:59' 
+          AND CAST(VISITSTART as date) BETWEEN GETDATE() 
+          AND GETDATE()+ 14
+      )
+    ) * 100
+  ) as 'Percentage of total hours' 
+FROM 
+  SRCI_PROCURA_BC.CLIENTS c -- Clients holds dummy entries that relate to non-productive 'clients' this is because the visits table MUST have a client ID assigned to every visit. 
+  LEFT JOIN SRCI_PROCURA_BC.VISITS v on c.CLIENT_ID = v.CLIENT_ID 
+  and v.DL_END_TS = '9999-12-31 23:59:59' 
+WHERE 
+  --Most recent entries 
+  c.DL_END_TS = '9999-12-31 23:59:59' --2 weeks ahead, finding SCHEDULED non-productive activities. This time can be shifted as needed.
+  and CAST(v.VISITSTART as date) BETWEEN GETDATE() 
+  AND GETDATE()+ 14 
+GROUP BY 
+  CASE WHEN c.LASTNAME LIKE '%admin%' THEN 'Admin' WHEN c.LASTNAME = '**Scheduling Capacity**' THEN 'Scheduling Capacity' WHEN c.LASTNAME = '**Admission Capacity**' 
+  OR c.LASTNAME = 'Admission Capacity' THEN 'Admission Capacity' WHEN c.LASTNAME LIKE '%shift%' THEN 'Shift Transport' WHEN c.LASTNAME LIKE '%meeting%' THEN 'Meeting' WHEN c.LASTNAME LIKE '%training%' THEN 'Training' WHEN c.LASTNAME = 'Paid Coffee Break' THEN 'Paid Coffee Break' WHEN c.LASTNAME = 'Unpaid Break' THEN 'Unpaid Break' ELSE 'N/A' END
+
+
+
+
 -- Demonstration Multiple Cases
 SELECT 
   DISTINCT -- level 1. increment match 1-1 dated
@@ -59,6 +96,8 @@ FROM
     CLASS.[CLASSIFICATION_CODE] = l.LABOR_LEVEL7_NAME 
     AND class.DL_END_TS = '9999-12-31 23:59:59'
   )
+
+
 
 
 -- Demonstration Nested Querys
