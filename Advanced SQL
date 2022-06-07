@@ -1,5 +1,67 @@
+-- Demonstration Multiple Cases
+SELECT 
+  DISTINCT -- level 1. increment match 1-1 dated
+  CASE WHEN l.LABOR_LEVEL7_NAME = eh.INCREMENT_POINT THEN ph.t132f035_position_title ELSE '-' END AS 'Qualified 1', 
+  
+  -- level 2: increment match subs class dated 
+  CASE WHEN (
+    eh.occupancy_type = 'SUBS' 
+    AND l.LABOR_LEVEL7_NAME = eh.INCREMENT_POINT
+  ) THEN ph.t132f035_position_title ELSE '-' END AS 'Qualified 2', 
+  
+  --level 3: increment match pos history to employment history. SUBS (so even if w.laborlevel7 doesnt resolve increment in EH, then match anything from EH to pos history)
+  --- PROBABLY incorrect wording, will match on POSITION NUMBER in aurion and then retrieve title
+  CASE WHEN (
+    eh.occupancy_type = 'SUBS' 
+    AND ph.t132f005_position_no = eh.EMPLOYEE_NUMBER
+  ) THEN ph.t132f035_position_title ELSE '-' END AS 'Qualified 3', 
+  
+  -- level 4: nonsubs increment match EH to W
+  CASE WHEN (
+    eh.occupancy_type = 'NONSUBS' 
+    AND l.LABOR_LEVEL7_NAME = eh.INCREMENT_POINT
+  ) THEN ph.t132f035_position_title ELSE '-' END AS 'Qualified 4', 
+ 
+ -- level 5: increment match pos history to employment history. NONSUBS (so even if w.laborlevel7 doesnt resolve increment in EH, then match anything from EH to pos history)
+  CASE WHEN (
+    eh.occupancy_type = 'NONSUBS' 
+    AND ph.t132f005_position_no = eh.EMPLOYEE_NUMBER
+  ) THEN ph.t132f035_position_title ELSE '-' END AS 'Qualified 5', 
+  
+  -- Level 6: NOTHING 
+  CASE WHEN (
+    l.LABOR_LEVEL7_NAME <> eh.INCREMENT_POINT 
+    AND eh.occupancy_type <> 'SUBS' 
+    AND eh.occupancy_type <> 'NONSUBS' 
+    AND ph.t132f005_position_no <> eh.EMPLOYEE_NUMBER
+  ) THEN 'NOTHING TOO RETRIEVE' ELSE '-' END AS 'Qualified 6' -- w.WORKFORCE_CENTRAL_TOTAL_ID,
+FROM 
+  CUR_KRONOS_BC.C0063_WORKFORCE_CENTRAL_TOTAL w 
+  LEFT JOIN CUR_KRONOS_BC.C0049_PERSON p ON (
+    w.EMPLOYEE_ID = p.PERSON_ID 
+    AND p.DL_END_TS = '9999-12-31 23:59:59'
+  ) 
+  LEFT JOIN [CUR_KRONOS_BC].[C0067_TIME_SHEET_ITEM] ts ON (
+    ts.TIME_SHEET_ITEM_ID = w.TIME_SHEET_ITEM_ID 
+    AND ts.DL_END_TS = '9999-12-31 23:59:59'
+  ) -- LEFT JOIN [SRCI_KRONOS_BC].[WORKRULEIDS] wr ON (wr.WORKRULEID = ts.WORK_RULE_ID AND wr.DL_END_TS = '9999-12-31 23:59:59')
+  LEFT JOIN CUR_KRONOS_BC.C0064_LABOR_ACCOUNT l ON (
+    w.LABOR_ACCOUNT_ID = l.LABOR_ACCOUNT_ID 
+    AND l.DL_END_TS = '9999-12-31 23:59:59'
+  ) 
+  LEFT JOIN cur_aurion_bc.c0044_employment_history eh ON (
+    eh.EMPLOYEE_NUMBER = p.PERSON_NUMBER 
+    AND w.START_DATE_TIME >= eh.DATE_EFFECTIVE 
+    AND w.END_DATE_TIME <= eh.connect_date_to 
+    AND eh.DL_END_TS = '9999-12-31 23:59:59'
+  ) 
+  LEFT JOIN [CUR_AURION_BC].[C0071_CLASSIFICATION] class ON (
+    CLASS.[CLASSIFICATION_CODE] = l.LABOR_LEVEL7_NAME 
+    AND class.DL_END_TS = '9999-12-31 23:59:59'
+  )
 
--- Nested Querys
+
+-- Demonstration Nested Querys
 SELECT 
   ph.SK_POSITION_ID 
 FROM 
