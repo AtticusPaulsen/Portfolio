@@ -1,0 +1,52 @@
+
+-- Nested Querys
+SELECT 
+  ph.SK_POSITION_ID 
+FROM 
+  CUR_KRONOS_BC.C0063_WORKFORCE_CENTRAL_TOTAL w 
+  LEFT JOIN CUR_KRONOS_BC.C0049_PERSON p ON (
+    w.EMPLOYEE_ID = p.PERSON_ID 
+    AND p.DL_END_TS = '9999-12-31 23:59:59'
+  ) 
+  LEFT JOIN cur_aurion_bc.c0044_employment_history eh ON (
+    eh.EMPLOYEE_NUMBER = p.PERSON_NUMBER 
+    AND eh.DL_END_TS = '9999-12-31 23:59:59' 
+    AND w.START_DATE_TIME >= eh.DATE_EFFECTIVE 
+    AND w.START_DATE_TIME <= eh.connect_date_to 
+    AND occupancy_type = 'SUBS'
+  ) 
+  LEFT JOIN PEOPLE.DIM_POSITION ph ON (
+    ph.position_number = eh.POSITION_NUMBER 
+    AND ph.DL_END_TS = '9999-12-31 23:59:59'
+  ) 
+WHERE 
+  1 = 1 
+  AND w.DL_END_TS = '9999-12-31 23:59:59' 
+  AND WORKFORCE_CENTRAL_TOTAL_ID NOT IN (
+    SELECT 
+      WORKFORCE_CENTRAL_TOTAL_ID 
+    FROM 
+      CUR_KRONOS_BC.C0063_WORKFORCE_CENTRAL_TOTAL w 
+      LEFT JOIN CUR_KRONOS_BC.C0049_PERSON p ON (
+        w.EMPLOYEE_ID = p.PERSON_ID 
+        AND p.DL_END_TS = '9999-12-31 23:59:59'
+      ) 
+      LEFT JOIN cur_aurion_bc.c0044_employment_history eh ON (
+        eh.EMPLOYEE_NUMBER = p.PERSON_NUMBER 
+        AND eh.DL_END_TS = '9999-12-31 23:59:59' 
+        AND w.START_DATE_TIME >= eh.DATE_EFFECTIVE 
+        AND w.START_DATE_TIME <= eh.connect_date_to 
+        AND eh.occupancy_type = 'SUBS'
+      ) 
+      LEFT JOIN PEOPLE.DIM_POSITION ph ON (
+        ph.position_number = eh.POSITION_NUMBER 
+        AND ph.DL_END_TS = '9999-12-31 23:59:59'
+      ) 
+    WHERE 
+      1 = 1 
+      AND w.DL_END_TS = '9999-12-31 23:59:59' 
+    GROUP BY 
+      WORKFORCE_CENTRAL_TOTAL_ID 
+    HAVING 
+      COUNT(1) > 1
+  )
