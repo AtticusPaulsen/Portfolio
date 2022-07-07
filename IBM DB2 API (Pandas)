@@ -1,0 +1,105 @@
+## import ibm db2 library functions, pandas, and the pandas db2 interation library
+import ibm_db
+import pandas
+import ibm_db_dbi
+
+##                                                                                                      Connection Details
+
+## if not installed use these
+## pip install --force-reinstall ibm_db==3.1.0 ibm_db_sa==0.3.3
+## pip install sqlalchemy==1.3.24
+## pip install ipython-sql
+
+## values for connection
+dsn_hostname = "fbd88901-ebdb-4a4f-a32e-9822b9fb237b.c1ogj3sd0tgtu0lqde00.databases.appdomain.cloud"
+dsn_uid = "NOTHING HERE" # intentional
+dsn_pwd = 'NOTHING HERE' # intentional
+
+dsn_driver = "{IBM DB2 ODBC DRIVER}"
+dsn_database = "BLUDB"
+dsn_port = "32731"
+dsn_protocol = "TCPIP"
+dsn_security = "SSL"
+
+## apply values to connection string
+dsn = (
+    "DRIVER={0};"
+    "DATABASE={1};"
+    "HOSTNAME={2};"
+    "PORT={3};"
+    "PROTOCOL={4};"
+    "UID={5};"
+    "PWD={6};"
+    "SECURITY={7};").format(dsn_driver, dsn_database, dsn_hostname, dsn_port, dsn_protocol, dsn_uid, dsn_pwd,dsn_security)
+
+## give connection string
+print(dsn)
+
+## try to connect, or print the error
+try:
+    conn = ibm_db.connect(dsn, "", "")
+    print ("Connected to database: ", dsn_database, "as user: ", dsn_uid, "on host: ", dsn_hostname)
+
+except:
+    print ("Unable to connect: ", ibm_db.conn_errormsg() )
+
+#Retrieve Metadata for the Database Server
+server = ibm_db.server_info(conn)
+
+print ("DBMS_NAME: ", server.DBMS_NAME)
+print ("DBMS_VER:  ", server.DBMS_VER)
+print ("DB_NAME:   ", server.DB_NAME)
+
+#Retrieve Metadata for the Database Client / Driver
+client = ibm_db.client_info(conn)
+
+print ("DRIVER_NAME:          ", client.DRIVER_NAME)
+print ("DRIVER_VER:           ", client.DRIVER_VER)
+print ("DATA_SOURCE_NAME:     ", client.DATA_SOURCE_NAME)
+print ("DRIVER_ODBC_VER:      ", client.DRIVER_ODBC_VER)
+print ("ODBC_VER:             ", client.ODBC_VER)
+print ("ODBC_SQL_CONFORMANCE: ", client.ODBC_SQL_CONFORMANCE)
+print ("APPL_CODEPAGE:        ", client.APPL_CODEPAGE)
+print ("CONN_CODEPAGE:        ", client.CONN_CODEPAGE)
+
+##                                                                                              basic commands start from here
+
+#Drop Query
+dropQuery = "drop table INSTRUCTOR"
+dropStmt = ibm_db.exec_immediate(conn, dropQuery)
+
+#Create Query
+createQuery = "create table INSTRUCTOR(id INTEGER PRIMARY KEY NOT NULL, fname VARCHAR(50), lname VARCHAR(50), city VARCHAR(50), ccode CHAR(50))"
+createStmt = ibm_db.exec_immediate(conn, createQuery)
+
+#Insert Query
+insertQuery = "INSERT INTO INSTRUCTOR VALUES (1, 'rav', 'ahuja', 'TORONTO', 'CA'), (2, 'raul', 'chong', 'MARKHAM', 'CA'), (3, 'Hima', 'Vasudevan', 'Chicago', 'US')"
+insertStmt = ibm_db.exec_immediate(conn, insertQuery)
+
+#Select Query
+selectQuery = "select * from INSTRUCTOR"
+selectStmt = ibm_db.exec_immediate(conn, selectQuery)
+#Returns results as json
+ibm_db.fetch_both(selectStmt)
+
+#Update Query
+UpdateQuery = "UPDATE INSTRUCTOR SET CITY = 'MOOSETOWN' WHERE FNAME = 'rav'"
+UpdateStmt = ibm_db.exec_immediate(conn, UpdateQuery)
+
+##                                                                                                 PANDAS starts from here
+
+#connection for pandas
+pconn = ibm_db_dbi.Connection(conn)
+
+#query statement to retrieve all rows in INSTRUCTOR table
+selectQuery = "select * from INSTRUCTOR"
+#put information into dataframe
+pdf = pandas.read_sql(selectQuery, pconn)
+#print just the last name from first row
+pdf.LNAME[0]
+
+#whats shape of data
+pdf.shape
+
+# close connection
+ibm_db.close(conn)
