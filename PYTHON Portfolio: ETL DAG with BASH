@@ -1,0 +1,70 @@
+from datetime import timedelta
+from airflow import DAG
+from airflow.operators.bash_operator import BashOperator
+from airflow.utils.dates import days_ago
+
+
+default_args = {
+    'owner': 'Atticus Paulsen',
+    'start_date': days_ago(0),
+    'email': ['atticus@fakemail.com'],
+    'email_on_failure': True,
+    'email_on_retry': True,
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+dag = DAG(
+    'ETL_toll_data',
+    default_args=default_args,
+    description='Apache Airflow Final Assignment',
+    schedule_interval=timedelta(days=1),
+)
+
+# unzip data
+
+unzip_data= BashOperator(
+    task_id='unzip_data',
+    bash_command='tar -xvzf /home/project/airflow/dags/finalassignment/tolldata.tgz',
+    dag=dag,
+)
+
+ 
+# extract_data_from_csv
+extract_data_from_csv= BashOperator(
+    task_id='extract_data_from_csv',
+    bash_command='cut -d"," -f1,2,3,4 /home/project/vehicle-data.csv > /home/project/csv_data.csv',
+    dag=dag,
+)
+
+# extract_data_from_tsv
+extract_data_from_tsv= BashOperator(
+    task_id='extract_data_from_tsv',
+    bash_command='cut -f5,6,7 /home/project/tollplaza-data.tsv > /home/project/tsv_data.csv --output-delimiter=','',
+    dag=dag,
+)
+
+# extract_data_from_fixed_width
+extract_data_from_fixed_width= BashOperator(
+    task_id='extract_data_from_fixed_width',
+    bash_command='cat /home/project/payment-data.txt | cut -b 59-70 | tr " " "," > /home/project/fixed_width_data.csv',
+    dag=dag,
+)
+
+# consolidate_data
+consolidate_data= BashOperator(
+    task_id='consolidate_data',
+    bash_command='paste csv_data.csv tsv_data.csv fixed_width_data.csv > extracted_data.csv -d, --delimiters=','',
+    dag=dag,
+)
+
+
+# transform_data
+transform_data= BashOperator(
+    task_id='transform_data',
+    bash_command='cat extracted_data.csv | tr [a-z] [A-Z] > transformed_data.csv',
+    dag=dag,
+)
+
+# task pipeline
+unzip_data >> extract_data_from_csv >> extract_data_from_tsv >> extract_data_from_fixed_width >> consolidate_data >> transform_data
